@@ -1,4 +1,4 @@
-package pachong
+package gopa
 
 import (
 	"github.com/noxue/transcode"

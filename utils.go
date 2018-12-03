@@ -1,4 +1,4 @@
-package pachong
+package gopa
 
 
 func checkErr(err error){
