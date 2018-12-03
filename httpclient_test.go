@@ -7,7 +7,7 @@ import (
 
 func TestGetHtml(t *testing.T) {
 	hc := newHttpClient()
-	html, err:=hc.getHtml("https://www.88dush.com/xiaoshuo/43/43849/11658052.html")
+	html, err:=hc.getHtml("https://www.88dush.com/xiaoshuo/43/43849/11658052.Html")
 	checkErr(err)
 	fmt.Println(html)
 }
