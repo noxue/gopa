@@ -12,7 +12,7 @@ func TestData_Rules(t *testing.T) {
 	"rules":[
 	{"name":"title","selector":"<title.*?>(.*)</title>"},
 	{"name":"text","selector":"(?i)<li[^>]+?><a href=\"[^\"]*?\" Data-v-[^>]+?>([^>]*)?</a></li>"},
-	{"name":"url","selector":"(?i)<li[^>]+?><a href=\"([^\"]*?)\" Data-v-[^>]+?>[^>]*?</a></li>","do":"#,http://noxue.com#","replace":"","replaceText":"/aaaaaa"}
+	{"name":"url","selector":"(?i)<li[^>]+?><a href=\"([^\"]*?)\" Data-v-[^>]+?>[^>]*?</a></li>","do":"#,http://noxue.com#","replace":[{"selector":"no","text":"yes"},{"selector":"sxue","text":"yes"}]}
 ]
 }`
 

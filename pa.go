@@ -27,8 +27,8 @@ func NewPa() *Pa {
 	}
 }
 
-func (this *Data)Download(savePath string) {
-	err:=ioutil.WriteFile(savePath,this.b,0666)
+func (this *Data) Download(savePath string) {
+	err := ioutil.WriteFile(savePath, this.b, 0666)
 	checkErr(err)
 }
 
@@ -76,7 +76,9 @@ func (this *Data) Rules(ruleStr string) (*Data) {
 				this.Data[0][r.Name] = ""
 			}
 			this.Data[0][r.Name] = this.do(ss[1], r.Do)
-			this.Data[0][r.Name] = this.replace(this.Data[0][r.Name], r.Replace, r.ReplaceText)
+			for _, v1 := range r.Replace {
+				this.Data[0][r.Name] = this.replace(this.Data[0][r.Name], v1.Selector, v1.Text)
+			}
 			continue
 		}
 
@@ -103,7 +105,9 @@ func (this *Data) Rules(ruleStr string) (*Data) {
 				this.Data = append(this.Data, make(map[string]string))
 			}
 			this.Data[i][r.Name] = this.do(v[1], r.Do)
-			this.Data[i][r.Name] = this.replace(this.Data[i][r.Name], r.Replace, r.ReplaceText)
+			for _, v1 := range r.Replace {
+				this.Data[i][r.Name] = this.replace(this.Data[i][r.Name], v1.Selector, v1.Text)
+			}
 		}
 	}
 	return this
@@ -127,14 +131,14 @@ func (this *Data) String() string {
 }
 
 // 返回第一条采集到的结果
-func (this *Data) One() map[string]string{
-	if len(this.Data) == 0{
+func (this *Data) One() map[string]string {
+	if len(this.Data) == 0 {
 		panic(errors.New("内容采集失败，没有任何结果"))
 	}
 	return this.Data[0]
 }
 
 // 返回所有采集到的结果
-func (this *Data) All() []map[string]string{
+func (this *Data) All() []map[string]string {
 	return this.Data
 }
