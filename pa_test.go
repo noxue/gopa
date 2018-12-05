@@ -1,18 +1,19 @@
 package gopa
 
 import (
+	"encoding/json"
 	"fmt"
 	"testing"
 )
 
 func TestData_Rules(t *testing.T) {
 
-	rule:=`{
+	ruleStr:=`{
 	"all":true,
 	"rules":[
 	{"name":"title","selector":"<title.*?>(.*)</title>"},
 	{"name":"text","selector":"(?i)<li[^>]+?><a href=\"[^\"]*?\" Data-v-[^>]+?>([^>]*)?</a></li>"},
-	{"name":"url","selector":"(?i)<li[^>]+?><a href=\"([^\"]*?)\" Data-v-[^>]+?>[^>]*?</a></li>","do":"#,http://noxue.com#","replace":[{"selector":"no","text":"yes"},{"selector":"sxue","text":"yes"}]}
+	{"name":"Url","selector":"(?i)<li[^>]+?><a href=\"([^\"]*?)\" Data-v-[^>]+?>[^>]*?</a></li>","do":"#,http://noxue.com#","replace":[{"selector":"no","text":"yes"},{"selector":"sxue","text":"yes"}]}
 ]
 }`
 
@@ -24,6 +25,11 @@ func TestData_Rules(t *testing.T) {
 			}
 		}()
 
+		var rule Rule
+		err=json.Unmarshal([]byte(ruleStr), &rule)
+		if err!=nil{
+			return
+		}
 		data:=NewPa().Get("https://noxue.com/a").Rules(rule).Do(func(data *Data) *Data {
 			for i, _ := range data.Data {
 				data.Data[i]["title"]+=" 不学网"

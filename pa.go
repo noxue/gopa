@@ -7,18 +7,21 @@ import (
 	"regexp"
 )
 
-type DoFunc func(data *Data) *Data
+type DoFunc func(data *Data, value string) string
 
 type Pa struct {
 	hc   *httpClient
-	data Data
+	data *Data
 }
 
 type Data struct {
 	b    []byte
+	Url  string // 当前请求的地址
 	Html string
 	Data []map[string]string
-	Rule ruleType
+	Rule Rule
+	// 根据do指定字符串执行指定函数，比如：用户传入自动下载图片的函数
+	doFuncs map[string]DoFunc
 }
 
 func NewPa() *Pa {
@@ -32,14 +35,16 @@ func (this *Data) Download(savePath string) {
 	checkErr(err)
 }
 
-func (this *Pa) Get(site string) (data *Data) {
+func (this *Pa) Get(site string) *Data {
 	b, err := this.hc.get(site)
 	checkErr(err)
-	data = &Data{
+	this.data = &Data{
+		doFuncs:make(map[string]DoFunc),
+		Url:  site,
 		b:    b,
 		Html: this.hc.decode(string(b)),
 	}
-	return
+	return this.data
 }
 
 func (this *Data) ToBytes() (bs []byte) {
@@ -52,12 +57,21 @@ func (this *Data) ToString() (html string) {
 	return
 }
 
-func (this *Data) Rules(ruleStr string) (*Data) {
+// 设置函数，执行规则中do指定的字符串与name对应的函数
+func (this *Data) SetDoFunc(name string, doFunc DoFunc) *Data {
+	if name==""{
+		panic(errors.New("设置的DoFunc函数为指定Name"))
+	}
+	this.doFuncs[name] = doFunc
+	return this
+}
+
+func (this *Data) Rules(rule Rule) (*Data) {
 	// 如果有被调用过，清空数据，不影响本次结果，让rules函数可以多次调用
-	if len(this.Data)==0{
+	if len(this.Data) != 0 {
 		this.Data = *&[]map[string]string{}
 	}
-	this.Rule = parseRule(ruleStr)
+	this.Rule = rule
 	for _, r := range this.Rule.Rules {
 
 		// name不能为空
@@ -76,7 +90,10 @@ func (this *Data) Rules(ruleStr string) (*Data) {
 			}
 			ss := re.FindStringSubmatch(content)
 			if len(ss) != 2 {
-				this.Data[0][r.Name] = ""
+				checkErr(errors.New(r.Name+"规则没匹配到内容，请检查规则是否正确"))
+			}
+			if r.SubSelector != "" {
+				ss = this.subSelector(ss[1], r.SubSelector, false)[0]
 			}
 			this.Data[0][r.Name] = this.do(ss[1], r.Do)
 			for _, v1 := range r.Replace {
@@ -88,8 +105,12 @@ func (this *Data) Rules(ruleStr string) (*Data) {
 		//下面是匹配全部
 		ss := re.FindAllStringSubmatch(content, -1)
 
-		if len(ss) == 0 {
-			continue
+		if len(ss) == 0 || len(ss[0]) != 2 {
+			checkErr(errors.New(r.Name + "规则出错，正则没获取到内容，请检查：" + r.SubSelector))
+		}
+
+		if r.SubSelector != "" {
+			ss = this.subSelector(ss[0][1], r.SubSelector, true)
 		}
 
 		if len(this.Data) == 0 {
@@ -116,8 +137,20 @@ func (this *Data) Rules(ruleStr string) (*Data) {
 	return this
 }
 
-func (this *Data) Do(doFunc DoFunc) *Data {
-	return doFunc(this)
+func (this *Data) subSelector(text string, subSelector string, all bool) (ret [][]string) {
+
+	re, err := regexp.Compile(subSelector)
+	checkErr(err)
+	if all {
+		ret = re.FindAllStringSubmatch(text, -1)
+		return
+	}
+	ret = append(ret, re.FindStringSubmatch(text))
+	return
+}
+
+func (this *Data) Do(doFunc DoFunc,value string) string {
+	return doFunc(this,value)
 }
 
 func (this *Data) String() string {

@@ -1,7 +1,7 @@
 package gopa
 
 import (
-	"encoding/json"
+	"github.com/pkg/errors"
 	"regexp"
 	"strings"
 )
@@ -12,9 +12,10 @@ type Replace struct {
 }
 
 type ruleNode struct {
-	Name     string // 采集后组成json的名称
-	Selector string // 要采集的内容的正则
-	Replace  []Replace
+	Name        string   // 采集后组成json的名称
+	Selector    string   // 要采集的内容的正则
+	SubSelector string // 子选择器，把selector匹配的结果作为匹配内容以此执行subSelector指定的正则，最后匹配的结果作为整个结果
+	Replace     []Replace
 	// 获取到的内容做处理，如：采集的相对路径变绝对路径
 	// 例如：###,http://noxue.com###
 	// 表示逗号之后的内容中包含逗号之前的内容的部分用采集到的内容替换
@@ -22,15 +23,9 @@ type ruleNode struct {
 	Do string
 }
 
-type ruleType struct {
+type Rule struct {
 	All   bool // 是否匹配全部，默认是简单模式
 	Rules []ruleNode
-}
-
-func parseRule(ruleStr string) (rule ruleType) {
-	err := json.Unmarshal([]byte(ruleStr), &rule)
-	checkErr(err)
-	return
 }
 
 // 把text内容 按照replace指定的正则匹配的所有内容替换成replaceText
@@ -49,7 +44,17 @@ func (this *Data) do(content, doStr string) string {
 	if len(doStr) == 0 {
 		return content
 	}
+
 	arr := strings.SplitN(doStr, ",", 2)
+	if arr[0] == "url" {
+		return this.Url +content
+	} else {
+		f,ok:=this.doFuncs[arr[0]]
+		if !ok {
+			panic(errors.New("没有为规则"+arr[0]+"指定处理函数"))
+		}
+		return this.Do(f, content)
+	}
 	if len(arr) < 2 {
 		return content
 	}
