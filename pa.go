@@ -53,7 +53,10 @@ func (this *Data) ToString() (html string) {
 }
 
 func (this *Data) Rules(ruleStr string) (*Data) {
-
+	// 如果有被调用过，清空数据，不影响本次结果，让rules函数可以多次调用
+	if len(this.Data)==0{
+		this.Data = *&[]map[string]string{}
+	}
 	this.Rule = parseRule(ruleStr)
 	for _, r := range this.Rule.Rules {
 
